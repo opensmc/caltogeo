@@ -1,4 +1,12 @@
+"""
+Basic library methods to grab events from a Google Calendar in a very
+simple and overdone manner.
+
+You can import these functions, or just run this as a script.
+"""
+
 import json
+import logging
 import requests
 import argparse
 import collections
@@ -6,6 +14,7 @@ import collections
 from get_api_key import get_key
 
 
+# Here to standardize data.
 Event = collections.namedtuple('Event', [
     'event_id',
     'event_name',
@@ -62,6 +71,15 @@ def list_events_from_calendar(calendar_id, key):
 
 
 def get_instances_from_calendar_for_event(calendar_id, event_id, key):
+    """
+    Given a recurring event ID we can pull a list of specific events. Use
+    that to grab any events that belong to that particular recurring event.
+
+    :param calendar_id: A Google calendar ID
+    :param event_id: A Google recurring event ID
+    :param key: Google API Key
+    :return:
+    """
     url = INSTANCES_URL.format(event_id=event_id,
                                calendar_id=calendar_id)
     r = requests.get(url=url, params={'key': key})
@@ -99,6 +117,8 @@ def dump_events_to_file(event_list, outfile):
 
 
 if __name__ == '__main__':
+    # Given a calendar ID, get all events attached to it
+    # and output the important parts in JSON.
     parser = argparse.ArgumentParser(description='Get Calendar Data')
     parser.add_argument('--secret_file', type=str, default=None)
     parser.add_argument('--output_file', type=str, default='/tmp/out.json',
@@ -119,6 +139,8 @@ if __name__ == '__main__':
             key=key,
         )
         events.extend(new_events)
+
+    logging.info('Processed {} events'.format(len(events)))
 
     dump_events_to_file(event_list=events,
                         outfile=args.output_file)
