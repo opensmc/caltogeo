@@ -1,3 +1,4 @@
+import json
 import requests
 import collections
 
@@ -80,13 +81,32 @@ def get_instances_from_calendar_for_event(calendar_id, event_id, key):
     return events
 
 
+def dump_events_to_file(event_list, outfile):
+    """
+    Take a list of assembled Event namedtuples and
+    dump them to a JSON file
+    :param event_list:
+    :return:
+    """
+    dict_list = [x._asdict() for x in event_list]
+
+    with open(outfile, 'w') as f:
+        json.dump(dict_list, f)
+
+
 if __name__ == '__main__':
     key = get_key()
-    print(list_events_from_calendar(calendar_id=DEFAULT_CALENDAR_ID,
-                                    key=key))
-    #results = get_instances_from_calendar_for_event(
-    #    calendar_id=DEFAULT_CALENDAR_ID,
-    #    event_id=DEFAULT_EVENT_ID,
-    #    key=key
-    #)
-    #print(results)
+    events, recurring_ids = list_events_from_calendar(
+        calendar_id=DEFAULT_CALENDAR_ID,
+        key=key
+    )
+    for recurring_id in recurring_ids:
+        new_events = get_instances_from_calendar_for_event(
+            calendar_id=DEFAULT_CALENDAR_ID,
+            event_id=DEFAULT_EVENT_ID,
+            key=key
+        )
+        events.extend(new_events)
+
+    dump_events_to_file(event_list=events,
+                        outfile='/tmp/dump.json')
