@@ -1,5 +1,6 @@
 import json
 import requests
+import argparse
 import collections
 
 from get_api_key import get_key
@@ -24,7 +25,6 @@ EVENT_LIST_URL = ('https://www.googleapis.com/calendar/v3/'
 DEFAULT_CALENDAR_ID = (
     'opensmc.org_tgq2v29akgb52a3a0jqq4ti67c%40group.calendar.google.com'
 )
-DEFAULT_EVENT_ID = 'c86a793khmflcqsss9qj2tpr5g'
 
 
 def list_events_from_calendar(calendar_id, key):
@@ -88,6 +88,10 @@ def dump_events_to_file(event_list, outfile):
     :param event_list:
     :return:
     """
+    if not outfile:
+        # Nobody wants to do this.
+        return
+
     dict_list = [x._asdict() for x in event_list]
 
     with open(outfile, 'w') as f:
@@ -95,18 +99,26 @@ def dump_events_to_file(event_list, outfile):
 
 
 if __name__ == '__main__':
-    key = get_key()
+    parser = argparse.ArgumentParser(description='Get Calendar Data')
+    parser.add_argument('--secret_file', type=str, default=None)
+    parser.add_argument('--output_file', type=str, default='/tmp/out.json',
+                        help='File to write JSON to')
+    parser.add_argument('--calendar_id', type=str,
+                        default=DEFAULT_CALENDAR_ID,
+                        help='Google ID of relevant calendar')
+    args = parser.parse_args()
+    key = get_key(args.secret_file)
     events, recurring_ids = list_events_from_calendar(
         calendar_id=DEFAULT_CALENDAR_ID,
-        key=key
+        key=key,
     )
     for recurring_id in recurring_ids:
         new_events = get_instances_from_calendar_for_event(
             calendar_id=DEFAULT_CALENDAR_ID,
-            event_id=DEFAULT_EVENT_ID,
-            key=key
+            event_id=recurring_id,
+            key=key,
         )
         events.extend(new_events)
 
     dump_events_to_file(event_list=events,
-                        outfile='/tmp/dump.json')
+                        outfile=args.output_file)
